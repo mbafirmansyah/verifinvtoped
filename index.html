@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verifikasi Invoice</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #6366f1;
+      --primary-dark: #3730a3;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+      color: white; padding: 18px 32px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 2px 12px rgba(79,70,229,0.3);
+    }
+    header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.3px; }
+    header span { font-size: 1.6rem; }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2.5px dashed var(--primary-light);
+      border-radius: var(--radius);
+      background: white;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--primary);
+      background: #f0f0ff;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(79,70,229,0.15);
+    }
+    .upload-area input[type="file"] { display: none; }
+    .upload-icon { font-size: 3rem; margin-bottom: 12px; }
+    .upload-area h2 { font-size: 1.15rem; color: var(--primary); font-weight: 600; margin-bottom: 6px; }
+    .upload-area p { font-size: 0.875rem; color: var(--muted); }
+
+    /* Loading */
+    .loading { display: none; text-align: center; padding: 32px; }
+    .spinner {
+      width: 40px; height: 40px; margin: 0 auto 16px;
+      border: 4px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 14px 20px;
+      background: linear-gradient(90deg, #f0f0ff, #f8fafc);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 600; font-size: 0.95rem; color: var(--primary-dark);
+    }
+
+    /* Info Grid */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .info-item {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-item:nth-child(odd) { border-right: 1px solid var(--border); }
+    .info-item label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .info-item span { display: block; font-size: 0.9rem; color: var(--text); font-weight: 500; margin-top: 3px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead tr { background: #f0f0ff; }
+    th { padding: 11px 16px; text-align: left; font-weight: 600; color: var(--primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.4px; }
+    td { padding: 11px 16px; border-top: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .qty-badge {
+      display: inline-block;
+      background: #e0e7ff; color: var(--primary-dark);
+      border-radius: 20px; padding: 2px 10px;
+      font-weight: 600; font-size: 0.8rem;
+    }
+
+    /* Summary */
+    .summary-table { width: 100%; border-collapse: collapse; }
+    .summary-table tr td { padding: 9px 20px; font-size: 0.875rem; }
+    .summary-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+    .summary-table .label { color: var(--muted); }
+    .summary-table .value { text-align: right; font-weight: 500; }
+    .summary-table .total-row td { font-weight: 700; font-size: 1rem; color: var(--primary-dark); background: #f0f0ff; }
+    .discount { color: var(--success) !important; }
+
+    /* Verification */
+    .verify-status {
+      margin: 0 20px 16px;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 12px;
+      font-weight: 600; font-size: 0.95rem;
+    }
+    .verify-status.ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .verify-status.warn { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .verify-status.fail { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .verify-icon { font-size: 1.4rem; }
+
+    .check-list { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .check-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 8px; font-size: 0.875rem;
+      border: 1px solid var(--border);
+    }
+    .check-item.pass { background: #f0fdf4; border-color: #bbf7d0; }
+    .check-item.fail { background: #fff1f2; border-color: #fecdd3; }
+    .check-item .ci { font-size: 1rem; width: 20px; }
+    .check-label { flex: 1; font-weight: 500; }
+    .check-detail { font-size: 0.8rem; color: var(--muted); }
+
+    /* Upload Another */
+    .btn-upload-other {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: white; border: 2px solid var(--primary);
+      color: var(--primary); border-radius: 10px;
+      padding: 12px 24px; font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; width: 100%;
+      transition: all 0.2s ease;
+    }
+    .btn-upload-other:hover { background: var(--primary); color: white; }
+
+    .result-section { display: none; }
+    .file-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #e0e7ff; color: var(--primary-dark);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .info-item:nth-child(odd) { border-right: none; }
+      header { padding: 14px 16px; }
+      header h1 { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>🧾</span>
+  <h1>Verifikasi Invoice</h1>
+</header>
+
+<div class="container">
+
+  <!-- Upload -->
+  <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".pdf" />
+    <div class="upload-icon">📄</div>
+    <h2>Klik atau Drag & Drop File PDF</h2>
+    <p>Upload invoice dalam format PDF untuk diverifikasi</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p style="color:var(--muted); font-weight:500;">Memproses invoice...</p>
+  </div>
+
+  <!-- Result -->
+  <div class="result-section" id="resultSection">
+    <div class="file-badge" id="fileBadge">📄 <span id="fileName">invoice.pdf</span></div>
+
+    <!-- Invoice Info -->
+    <div class="card" id="cardInfo">
+      <div class="card-header">📋 Informasi Invoice</div>
+      <div class="info-grid" id="infoGrid"></div>
+    </div>
+
+    <!-- Products -->
+    <div class="card">
+      <div class="card-header">📦 Rincian Pesanan</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Produk</th>
+              <th class="text-center">Kuantitas</th>
+              <th class="text-right">Harga Satuan</th>
+              <th class="text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="productTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card">
+      <div class="card-header">💰 Ringkasan Pembayaran</div>
+      <table class="summary-table" id="summaryTable"></table>
+    </div>
+
+    <!-- Verification -->
+    <div class="card">
+      <div class="card-header">✅ Hasil Verifikasi</div>
+      <div class="verify-status" id="verifyStatus"></div>
+      <div class="check-list" id="checkList"></div>
+    </div>
+
+    <!-- Upload Another -->
+    <button class="btn-upload-other" onclick="document.getElementById('fileInput2').click()">
+      📄 Upload PDF Lain
+      <input type="file" id="fileInput2" accept=".pdf" style="display:none" />
+    </button>
+
+  </div>
+</div>
+
+<script>
+  // Set up PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  // ─── Drag & Drop ───
+  const uploadArea = document.getElementById('uploadArea');
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault(); uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') processFile(file);
+  });
+
+  document.getElementById('fileInput').addEventListener('change', e => {
+    if (e.target.files[0]) processFile(e.target.files[0]);
+  });
+  document.getElementById('fileInput2').addEventListener('change', e => {
+    if (e.target.files[0]) processFile(e.target.files[0]);
+  });
+
+  // ─── Core: Extract PDF Text ───
+  async function extractPdfText(file) {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const tc = await page.getTextContent();
+      fullText += tc.items.map(it => it.str).join(' ') + '\n';
+    }
+    return fullText;
+  }
+
+  // ─── Helpers ───
+  const fmt = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+  function parseRp(str) {
+    const m = str.replace(/[^\d]/g, '');
+    return m ? parseInt(m, 10) : 0;
+  }
+  function pick(text, patterns) {
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) return m[1]?.trim() || m[0]?.trim();
+    }
+    return null;
+  }
+
+  // ─── Parse Invoice ───
+  function parseInvoice(text) {
+    const data = {};
+
+    // No Invoice
+    data.noInvoice = pick(text, [
+      /(\d{18,})/,
+      /INV[\/\-]?\s*([\w\-\/]+)/i,
+      /No[.\s]*Invoice[\s:]+([^\n]+)/i
+    ]) || '-';
+
+    // Tanggal
+    data.tanggal = pick(text, [
+      /(\d{1,2}\s+\w+\s+\d{4})/,
+      /Tanggal Pembelian\s*:\s*([^\n]+)/i,
+      /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/
+    ]) || '-';
+
+    // Penjual
+    data.penjual = pick(text, [
+      /Penjual\s*:\s*([^\n]+)/i,
+      /Seller\s*:\s*([^\n]+)/i,
+      /DITERBITKAN ATAS NAMA\s+Penjual\s*:\s*([^\n]+)/i
+    ]) || '-';
+
+    // Pembeli
+    data.pembeli = pick(text, [
+      /Pembeli\s*:\s*([^\n]+)/i,
+      /Buyer\s*:\s*([^\n]+)/i,
+      /UNTUK\s+Pembeli\s*:\s*([^\n]+)/i
+    ]) || '-';
+
+    // Alamat
+    data.alamat = pick(text, [
+      /Alamat Pengiriman\s*:\s*([\s\S]+?)(?=INFO PRODUK|PRODUK|Metode)/i,
+      /Alamat\s*:\s*([^\n]+)/i
+    ]) || '-';
+    data.alamat = data.alamat.replace(/\s+/g, ' ').trim();
+
+    // Metode Pembayaran
+    data.metodePembayaran = pick(text, [
+      /Metode Pembayaran\s*:\s*([^\n]+)/i,
+      /Pembayaran\s*:\s*([^\n]+)/i,
+      /(BCA Virtual Account|Transfer Bank|COD|GoPay|OVO|Dana|QRIS|Kartu Kredit)/i
+    ]) || '-';
+
+    // ─── Produk ───
+    data.produk = [];
+    // Cari semua baris produk: nama, qty, harga satuan, total
+    const linesSplit = text.split(/\n/);
+    const rpPattern = /Rp[\s]*([\d.,]+)/gi;
+    // Cari blok antara INFO PRODUK dan TOTAL HARGA
+    const blockMatch = text.match(/INFO PRODUK[\s\S]*?(?=TOTAL HARGA \()/i);
+    if (blockMatch) {
+      const block = blockMatch[0];
+      // Ambil semua Rp values di block
+      const allPrices = [...block.matchAll(/Rp\s*([\d.,]+)/gi)].map(m => parseRp(m[0]));
+      // Ambil semua angka berat: N gr
+      const beratMatch = block.match(/(\d+)\s*gr/i);
+      // Ambil qty: angka standalone sebelum Rp
+      const qtyMatch = block.match(/(?:JUMLAH|BARANG)[\s\S]*?(\d+)\s*Rp/i) ||
+                       block.match(/(\d)\s*Rp\s*[\d.,]+\s*Rp/i);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      // Produk name: antara header dan Berat
+      let prodNama = block.replace(/INFO PRODUK.*?TOTAL HARGA/i, '')
+        .replace(/JUMLAH.*|HARGA SATUAN.*|Berat.*|Rp[\d.,\s]*/gi, '')
+        .replace(/\s+/g, ' ').trim();
+      // Try cleaner name
+      const namMatch = block.match(/(?:INVOICE\s+)?([A-Za-z][\w\s\-\.]+?)(?:\s+Berat|\s+\d\s+Rp)/i) ||
+                       text.match(/([A-Z][a-z][\w\s,\-\.]+?(?:Switch|Router|Access Point|Modem|Hub|AP|Gigabit|Unmanaged|Managed)[^\n]*)/i);
+      if (namMatch) prodNama = namMatch[1].trim();
+
+      if (allPrices.length >= 2) {
+        data.produk.push({ nama: prodNama || 'Produk', qty, harga: allPrices[0], total: allPrices[1] || allPrices[0] * qty });
+      }
+    }
+
+    // Fallback produk dari pola umum
+    if (data.produk.length === 0) {
+      const m = text.match(/(\d)\s*Rp\s*([\d.,]+)\s*Rp\s*([\d.,]+)/);
+      if (m) {
+        data.produk.push({ nama: 'Produk', qty: parseInt(m[1]), harga: parseRp(m[2]), total: parseRp(m[3]) });
+      }
+    }
+
+    // ─── Harga ───
+    data.totalHarga = pick(text, [
+      /TOTAL HARGA\s*\(\d+\s*BARANG\)\s*Rp\s*([\d.,]+)/i,
+      /Total Harga\s*[:\s]*Rp\s*([\d.,]+)/i
+    ]);
+    data.totalHarga = data.totalHarga ? parseRp('Rp' + data.totalHarga) : (data.produk[0]?.total || 0);
+
+    data.ongkir = pick(text, [/Total Ongkos Kirim\s*Rp\s*([\d.,]+)/i, /Ongkos Kirim\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.ongkir = parseRp('Rp' + data.ongkir);
+
+    data.diskonOngkir = pick(text, [/-Rp\s*([\d.,]+)/i, /Diskon.*?Rp\s*([\d.,]+)/i, /Kupon.*?-Rp\s*([\d.,]+)/i]) || '0';
+    data.diskonOngkir = parseRp('Rp' + data.diskonOngkir);
+
+    data.asuransi = pick(text, [/Biaya Asuransi.*?Rp\s*([\d.,]+)/i, /Asuransi.*?Rp\s*([\d.,]+)/i]) || '0';
+    data.asuransi = parseRp('Rp' + data.asuransi);
+
+    data.totalBelanja = pick(text, [/TOTAL BELANJA\s*Rp\s*([\d.,]+)/i, /Total Belanja\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.totalBelanja = parseRp('Rp' + data.totalBelanja);
+
+    data.totalTagihan = pick(text, [/TOTAL TAGIHAN\s*Rp\s*([\d.,]+)/i, /Total Tagihan\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.totalTagihan = parseRp('Rp' + data.totalTagihan);
+
+    return data;
+  }
+
+  // ─── Render ───
+  function renderResult(data, fileName) {
+    document.getElementById('fileName').textContent = fileName;
+
+    // Info
+    const infoItems = [
+      ['No. Invoice', data.noInvoice],
+      ['Tanggal Pembelian', data.tanggal],
+      ['Penjual', data.penjual],
+      ['Pembeli', data.pembeli],
+      ['Metode Pembayaran', data.metodePembayaran],
+      ['Alamat Pengiriman', data.alamat],
+    ];
+    document.getElementById('infoGrid').innerHTML = infoItems.map(([l, v]) =>
+      `<div class="info-item"><label>${l}</label><span>${v || '-'}</span></div>`
+    ).join('');
+
+    // Produk
+    document.getElementById('productTable').innerHTML = data.produk.length
+      ? data.produk.map((p, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.nama}</td>
+            <td class="text-center"><span class="qty-badge">${p.qty}</span></td>
+            <td class="text-right">${fmt(p.harga)}</td>
+            <td class="text-right"><strong>${fmt(p.total)}</strong></td>
+          </tr>`)
+        .join('')
+      : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Tidak ada produk ditemukan</td></tr>`;
+
+    // Summary
+    const summaryRows = [
+      ['Total Harga Barang', fmt(data.totalHarga), false],
+      ['Total Ongkos Kirim', fmt(data.ongkir), false],
+      ['Diskon Ongkos Kirim', '−' + fmt(data.diskonOngkir), true],
+      ['Biaya Asuransi Pengiriman', fmt(data.asuransi), false],
+      ['TOTAL BELANJA', fmt(data.totalBelanja), false, true],
+      ['TOTAL TAGIHAN', fmt(data.totalTagihan), false, true],
+    ];
+    document.getElementById('summaryTable').innerHTML = summaryRows.map(([l, v, disc, bold]) =>
+      `<tr ${bold ? 'class="total-row"' : ''}>
+        <td class="label">${l}</td>
+        <td class="value ${disc ? 'discount' : ''}">${v}</td>
+      </tr>`
+    ).join('');
+
+    // Verification
+    const checks = [];
+
+    // Cek 1: Subtotal produk
+    const calcSub = data.produk.reduce((s, p) => s + p.qty * p.harga, 0);
+    const subOk = data.totalHarga === 0 || Math.abs(calcSub - data.totalHarga) < 500;
+    checks.push({ ok: subOk || data.totalHarga === 0, label: 'Subtotal Produk', detail: `${fmt(calcSub)} vs ${fmt(data.totalHarga)}` });
+
+    // Cek 2: Total belanja
+    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir + data.asuransi;
+    const belanjaOk = data.totalBelanja === 0 || Math.abs(calcBelanja - data.totalBelanja) < 500;
+    checks.push({ ok: belanjaOk || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
+
+    // Cek 3: Total tagihan
+    const tagihanOk = data.totalTagihan === 0 || Math.abs(data.totalTagihan - data.totalBelanja) < 500;
+    checks.push({ ok: tagihanOk || data.totalTagihan === 0, label: 'Total Tagihan = Total Belanja', detail: `${fmt(data.totalTagihan)} vs ${fmt(data.totalBelanja)}` });
+
+    // Cek 4: Info kelengkapan
+    const infoOk = data.penjual !== '-' && data.pembeli !== '-';
+    checks.push({ ok: infoOk, label: 'Kelengkapan Info Penjual & Pembeli', detail: infoOk ? 'Data lengkap' : 'Ada info yang tidak terdeteksi' });
+
+    const allOk = checks.every(c => c.ok);
+    const someOk = checks.some(c => c.ok);
+    const statusEl = document.getElementById('verifyStatus');
+    if (allOk) {
+      statusEl.className = 'verify-status ok';
+      statusEl.innerHTML = '<span class="verify-icon">✅</span> Semua perhitungan invoice valid dan sesuai!';
+    } else if (someOk) {
+      statusEl.className = 'verify-status warn';
+      statusEl.innerHTML = '<span class="verify-icon">⚠️</span> Invoice memiliki beberapa item yang perlu diperiksa.';
+    } else {
+      statusEl.className = 'verify-status fail';
+      statusEl.innerHTML = '<span class="verify-icon">❌</span> Invoice tidak dapat diverifikasi sepenuhnya.';
+    }
+
+    document.getElementById('checkList').innerHTML = checks.map(c => `
+      <div class="check-item ${c.ok ? 'pass' : 'fail'}">
+        <span class="ci">${c.ok ? '✅' : '❌'}</span>
+        <span class="check-label">${c.label}</span>
+        <span class="check-detail">${c.detail}</span>
+      </div>`
+    ).join('');
+  }
+
+  // ─── Main Process ───
+  async function processFile(file) {
+    uploadArea.style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none';
+
+    try {
+      const text = await extractPdfText(file);
+      const data = parseInvoice(text);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+      renderResult(data, file.name);
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      uploadArea.style.display = 'block';
+      alert('Gagal membaca PDF: ' + err.message);
+    }
+  }
+</script>
+</body>
+</html>
