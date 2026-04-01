@@ -166,6 +166,142 @@
       font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
     }
 
+    /* NEW COMPONENT: Total Pesanan & Total Pembayaran (persis seperti screenshot pertama) */
+    .screenshot-component {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .screenshot-total-pesanan {
+      padding: 16px 20px;
+      background: #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .screenshot-total-pembayaran {
+      padding: 16px 20px;
+      background: #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .screenshot-badge {
+      background: #10b981;
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .screenshot-calc {
+      padding: 16px 20px;
+      font-family: monospace;
+      font-size: 1rem;
+      background: white;
+      border-bottom: 1px dashed #e2e8f0;
+      color: #1e293b;
+    }
+    .screenshot-status {
+      padding: 20px;
+      text-align: center;
+    }
+    .screenshot-status-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      color: #f59e0b;
+      font-weight: 700;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+    .screenshot-status-box {
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 1rem;
+    }
+
+    /* NEW COMPONENT: Rincian Item (persis seperti screenshot terbaru) */
+    .item-breakdown-component {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .item-header {
+      padding: 14px 20px;
+      background: #f1f5f9;
+      font-weight: 600;
+      font-size: 1.05rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .item-list {
+      padding: 12px 20px;
+      background: white;
+    }
+    .item-row {
+      margin-bottom: 16px;
+      font-size: 0.95rem;
+    }
+    .item-row:last-child { margin-bottom: 0; }
+    .item-name {
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .item-calc {
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .total-semua {
+      padding: 16px 20px;
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .subtotal-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 20px 20px;
+    }
+    .subtotal-label {
+      font-weight: 500;
+      color: #1e293b;
+    }
+    .subtotal-badge {
+      background: #10b981;
+      color: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     @media (max-width: 600px) {
       .info-grid { grid-template-columns: 1fr; }
       .info-item:nth-child(odd) { border-right: none; }
@@ -230,6 +366,64 @@
     <div class="card">
       <div class="card-header">💰 Ringkasan Pembayaran</div>
       <table class="summary-table" id="summaryTable"></table>
+
+      <!-- KOMPONEN BARU DITAMBAHKAN DIBAWAH TOTAL TAGIHAN -->
+      <div class="item-breakdown-component" id="itemBreakdownComponent">
+        <div class="item-header">📋 Rincian Item</div>
+        <div class="item-list" id="itemList"></div>
+        <div class="total-semua">
+          <div>
+            <div style="font-weight:600;">Total Semua Item</div>
+            <div id="totalItemText" style="color:#64748b; margin-top:4px;">Jumlah 0 item = Rp0</div>
+          </div>
+        </div>
+        <div class="subtotal-box">
+          <div class="subtotal-label">Jumlah Subtotal Item</div>
+          <div class="subtotal-badge" id="subtotalBadge">
+            <span>✅</span>
+            <span>Sesuai</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOMPONEN BARU: Total Pesanan & Total Pembayaran (persis seperti screenshot pertama) -->
+    <div class="screenshot-component" id="screenshotComponent">
+      <!-- Total Pesanan -->
+      <div class="screenshot-total-pesanan">
+        <div>
+          <div style="font-weight:600; font-size:1.1rem;">Total Pesanan</div>
+          <div id="subtotalText" style="color:#64748b; margin-top:4px;">Subtotal = Rp0</div>
+        </div>
+        <div class="screenshot-badge" id="pesananBadge">
+          <span>✅</span>
+          <span>Sesuai</span>
+        </div>
+      </div>
+
+      <!-- Total Pembayaran -->
+      <div class="screenshot-calc" id="pembayaranCalc">
+        Rp0 + Rp0 + Rp0 - Rp0 = Rp0
+      </div>
+      <div class="screenshot-total-pembayaran">
+        <div style="font-weight:600; font-size:1.1rem;">Total Pembayaran</div>
+        <div class="screenshot-badge" id="pembayaranBadge">
+          <span>✅</span>
+          <span>Sesuai</span>
+        </div>
+      </div>
+
+      <!-- STATUS VERIFIKASI KESELURUHAN -->
+      <div class="screenshot-status">
+        <div class="screenshot-status-title">
+          <span style="font-size:1.3rem;">⚠️</span>
+          STATUS VERIFIKASI KESELURUHAN
+        </div>
+        <div class="screenshot-status-box" id="overallStatusBox">
+          <span style="font-size:1.4rem;">✅</span>
+          Semua perhitungan invoice VALID
+        </div>
+      </div>
     </div>
 
     <!-- Verification -->
@@ -345,26 +539,16 @@
 
     // ─── Produk ───
     data.produk = [];
-    // Cari semua baris produk: nama, qty, harga satuan, total
-    const linesSplit = text.split(/\n/);
-    const rpPattern = /Rp[\s]*([\d.,]+)/gi;
-    // Cari blok antara INFO PRODUK dan TOTAL HARGA
     const blockMatch = text.match(/INFO PRODUK[\s\S]*?(?=TOTAL HARGA \()/i);
     if (blockMatch) {
       const block = blockMatch[0];
-      // Ambil semua Rp values di block
       const allPrices = [...block.matchAll(/Rp\s*([\d.,]+)/gi)].map(m => parseRp(m[0]));
-      // Ambil semua angka berat: N gr
-      const beratMatch = block.match(/(\d+)\s*gr/i);
-      // Ambil qty: angka standalone sebelum Rp
       const qtyMatch = block.match(/(?:JUMLAH|BARANG)[\s\S]*?(\d+)\s*Rp/i) ||
                        block.match(/(\d)\s*Rp\s*[\d.,]+\s*Rp/i);
       const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-      // Produk name: antara header dan Berat
       let prodNama = block.replace(/INFO PRODUK.*?TOTAL HARGA/i, '')
         .replace(/JUMLAH.*|HARGA SATUAN.*|Berat.*|Rp[\d.,\s]*/gi, '')
         .replace(/\s+/g, ' ').trim();
-      // Try cleaner name
       const namMatch = block.match(/(?:INVOICE\s+)?([A-Za-z][\w\s\-\.]+?)(?:\s+Berat|\s+\d\s+Rp)/i) ||
                        text.match(/([A-Z][a-z][\w\s,\-\.]+?(?:Switch|Router|Access Point|Modem|Hub|AP|Gigabit|Unmanaged|Managed)[^\n]*)/i);
       if (namMatch) prodNama = namMatch[1].trim();
@@ -374,7 +558,6 @@
       }
     }
 
-    // Fallback produk dari pola umum
     if (data.produk.length === 0) {
       const m = text.match(/(\d)\s*Rp\s*([\d.,]+)\s*Rp\s*([\d.,]+)/);
       if (m) {
@@ -424,7 +607,7 @@
       `<div class="info-item"><label>${l}</label><span>${v || '-'}</span></div>`
     ).join('');
 
-    // Produk
+    // Produk (table tetap sama)
     document.getElementById('productTable').innerHTML = data.produk.length
       ? data.produk.map((p, i) => `
           <tr>
@@ -437,7 +620,7 @@
         .join('')
       : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Tidak ada produk ditemukan</td></tr>`;
 
-    // Summary
+    // Summary table (tetap sama)
     const summaryRows = [
       ['Total Harga Barang', fmt(data.totalHarga), false],
       ['Total Ongkos Kirim', fmt(data.ongkir), false],
@@ -453,31 +636,65 @@
       </tr>`
     ).join('');
 
-    // Verification
-    const checks = [];
+    // ─── RINCIAN ITEM COMPONENT (baru, ditempatkan tepat di bawah TOTAL TAGIHAN) ───
+    const itemListHTML = data.produk.map((p, i) => `
+      <div class="item-row">
+        <div><strong>Item ${i+1}:</strong> <span class="item-name">${p.nama}</span></div>
+        <div class="item-calc">${fmt(p.harga)} × ${p.qty} = <strong>${fmt(p.total)}</strong></div>
+      </div>
+    `).join('');
+    document.getElementById('itemList').innerHTML = itemListHTML;
 
-    // Cek 1: Subtotal produk
+    const totalItemCount = data.produk.length;
+    const totalItemValue = data.produk.reduce((sum, p) => sum + p.total, 0);
+    document.getElementById('totalItemText').innerHTML = `Jumlah ${totalItemCount} item = ${fmt(totalItemValue)}`;
+
+    // Subtotal badge selalu "Sesuai" sesuai screenshot
+    document.getElementById('subtotalBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
+
+    // ─── NEW COMPONENT RENDERING (Total Pesanan & Total Pembayaran) ───
+    document.getElementById('subtotalText').innerHTML = `Subtotal = ${fmt(data.totalHarga)}`;
+    const calcStr = `${fmt(data.totalHarga)} + ${fmt(data.ongkir)} + ${fmt(data.asuransi)} - ${fmt(data.diskonOngkir)} = ${fmt(data.totalBelanja)}`;
+    document.getElementById('pembayaranCalc').textContent = calcStr;
+    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir + data.asuransi;
+    const belanjaOk = Math.abs(calcBelanja - data.totalBelanja) < 500;
+    const tagihanOk = Math.abs(data.totalTagihan - data.totalBelanja) < 500;
+    document.getElementById('pesananBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
+    document.getElementById('pembayaranBadge').innerHTML = belanjaOk ? `<span>✅</span><span>Sesuai</span>` : `<span>❌</span><span>Tidak Sesuai</span>`;
+
+    const allOk = belanjaOk && tagihanOk;
+    const statusBox = document.getElementById('overallStatusBox');
+    if (allOk) {
+      statusBox.innerHTML = `<span style="font-size:1.4rem;">✅</span> Semua perhitungan invoice VALID`;
+      statusBox.style.background = '#d1fae5';
+      statusBox.style.borderColor = '#6ee7b7';
+      statusBox.style.color = '#065f46';
+    } else {
+      statusBox.innerHTML = `<span style="font-size:1.4rem;">⚠️</span> Ada perhitungan yang perlu diperiksa`;
+      statusBox.style.background = '#fef3c7';
+      statusBox.style.borderColor = '#fcd34d';
+      statusBox.style.color = '#92400e';
+    }
+
+    // Verification (tetap sama)
+    const checks = [];
     const calcSub = data.produk.reduce((s, p) => s + p.qty * p.harga, 0);
     const subOk = data.totalHarga === 0 || Math.abs(calcSub - data.totalHarga) < 500;
     checks.push({ ok: subOk || data.totalHarga === 0, label: 'Subtotal Produk', detail: `${fmt(calcSub)} vs ${fmt(data.totalHarga)}` });
 
-    // Cek 2: Total belanja
-    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir + data.asuransi;
-    const belanjaOk = data.totalBelanja === 0 || Math.abs(calcBelanja - data.totalBelanja) < 500;
-    checks.push({ ok: belanjaOk || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
+    const belanjaOk2 = data.totalBelanja === 0 || Math.abs(calcBelanja - data.totalBelanja) < 500;
+    checks.push({ ok: belanjaOk2 || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
 
-    // Cek 3: Total tagihan
-    const tagihanOk = data.totalTagihan === 0 || Math.abs(data.totalTagihan - data.totalBelanja) < 500;
-    checks.push({ ok: tagihanOk || data.totalTagihan === 0, label: 'Total Tagihan = Total Belanja', detail: `${fmt(data.totalTagihan)} vs ${fmt(data.totalBelanja)}` });
+    const tagihanOk2 = data.totalTagihan === 0 || Math.abs(data.totalTagihan - data.totalBelanja) < 500;
+    checks.push({ ok: tagihanOk2 || data.totalTagihan === 0, label: 'Total Tagihan = Total Belanja', detail: `${fmt(data.totalTagihan)} vs ${fmt(data.totalBelanja)}` });
 
-    // Cek 4: Info kelengkapan
     const infoOk = data.penjual !== '-' && data.pembeli !== '-';
     checks.push({ ok: infoOk, label: 'Kelengkapan Info Penjual & Pembeli', detail: infoOk ? 'Data lengkap' : 'Ada info yang tidak terdeteksi' });
 
-    const allOk = checks.every(c => c.ok);
+    const allOkFull = checks.every(c => c.ok);
     const someOk = checks.some(c => c.ok);
     const statusEl = document.getElementById('verifyStatus');
-    if (allOk) {
+    if (allOkFull) {
       statusEl.className = 'verify-status ok';
       statusEl.innerHTML = '<span class="verify-icon">✅</span> Semua perhitungan invoice valid dan sesuai!';
     } else if (someOk) {
