@@ -7,60 +7,62 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     :root {
-      --primary: #4f46e5;
-      --primary-light: #6366f1;
-      --primary-dark: #3730a3;
-      --success: #10b981;
+      --primary: #03AC0E;
+      --primary-light: #2bba18;
+      --primary-dark: #028a0b;
+      --primary-bg: #ecfdf0;
+      --success: #03AC0E;
       --danger: #ef4444;
       --warning: #f59e0b;
-      --bg: #f8fafc;
+      --bg: #f3f4f6;
       --card: #ffffff;
-      --border: #e2e8f0;
-      --text: #1e293b;
-      --muted: #64748b;
-      --radius: 12px;
+      --border: #e5e7eb;
+      --text: #212121;
+      --muted: #6b7280;
+      --radius: 8px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
     header {
-      background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
-      color: white; padding: 18px 32px;
-      display: flex; align-items: center; gap: 12px;
-      box-shadow: 0 2px 12px rgba(79,70,229,0.3);
+      background: var(--primary);
+      color: white; padding: 14px 24px;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 2px 8px rgba(3,172,14,0.25);
+      position: sticky; top: 0; z-index: 100;
     }
-    header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.3px; }
-    header span { font-size: 1.6rem; }
+    header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.2px; }
+    header span { font-size: 1.4rem; }
 
-    .container { max-width: 1000px; margin: 0 auto; padding: 28px 20px; }
+    .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
 
     /* Upload Area */
     .upload-area {
-      border: 2.5px dashed var(--primary-light);
+      border: 2px dashed #a3e6a8;
       border-radius: var(--radius);
       background: white;
-      padding: 48px 24px;
+      padding: 44px 20px;
       text-align: center;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
       position: relative;
     }
     .upload-area:hover, .upload-area.dragover {
       border-color: var(--primary);
-      background: #f0f0ff;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(79,70,229,0.15);
+      background: var(--primary-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(3,172,14,0.12);
     }
     .upload-area input[type="file"] { display: none; }
-    .upload-icon { font-size: 3rem; margin-bottom: 12px; }
-    .upload-area h2 { font-size: 1.15rem; color: var(--primary); font-weight: 600; margin-bottom: 6px; }
-    .upload-area p { font-size: 0.875rem; color: var(--muted); }
+    .upload-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .upload-area h2 { font-size: 1.05rem; color: var(--primary-dark); font-weight: 600; margin-bottom: 4px; }
+    .upload-area p { font-size: 0.82rem; color: var(--muted); }
 
     /* Loading */
     .loading { display: none; text-align: center; padding: 32px; }
     .spinner {
-      width: 40px; height: 40px; margin: 0 auto 16px;
-      border: 4px solid var(--border);
+      width: 36px; height: 36px; margin: 0 auto 14px;
+      border: 3.5px solid var(--border);
       border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
@@ -72,16 +74,16 @@
       background: var(--card);
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
-      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
       overflow: hidden;
     }
     .card-header {
-      padding: 14px 20px;
-      background: linear-gradient(90deg, #f0f0ff, #f8fafc);
+      padding: 12px 16px;
+      background: var(--primary-bg);
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; gap: 8px;
-      font-weight: 600; font-size: 0.95rem; color: var(--primary-dark);
+      font-weight: 700; font-size: 0.9rem; color: var(--primary-dark);
     }
 
     /* Info Grid */
@@ -90,69 +92,69 @@
       gap: 0;
     }
     .info-item {
-      padding: 12px 20px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--border);
     }
     .info-item:nth-child(odd) { border-right: 1px solid var(--border); }
-    .info-item label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .info-item span { display: block; font-size: 0.9rem; color: var(--text); font-weight: 500; margin-top: 3px; }
+    .info-item label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .info-item span { display: block; font-size: 0.85rem; color: var(--text); font-weight: 500; margin-top: 2px; }
 
     /* Table */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-    thead tr { background: #f0f0ff; }
-    th { padding: 11px 16px; text-align: left; font-weight: 600; color: var(--primary-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.4px; }
-    td { padding: 11px 16px; border-top: 1px solid var(--border); color: var(--text); }
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: var(--primary-bg); }
+    th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--primary-dark); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; }
+    td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--text); }
     tr:last-child td { border-bottom: none; }
     .text-right { text-align: right; }
     .text-center { text-align: center; }
     .qty-badge {
       display: inline-block;
-      background: #e0e7ff; color: var(--primary-dark);
+      background: var(--primary-bg); color: var(--primary-dark);
       border-radius: 20px; padding: 2px 10px;
-      font-weight: 600; font-size: 0.8rem;
+      font-weight: 700; font-size: 0.75rem;
     }
 
     /* Summary */
     .summary-table { width: 100%; border-collapse: collapse; }
-    .summary-table tr td { padding: 9px 20px; font-size: 0.875rem; }
+    .summary-table tr td { padding: 8px 16px; font-size: 0.82rem; }
     .summary-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
     .summary-table .label { color: var(--muted); }
     .summary-table .value { text-align: right; font-weight: 500; }
-    .summary-table .total-row td { font-weight: 700; font-size: 1rem; color: var(--primary-dark); background: #f0f0ff; }
+    .summary-table .total-row td { font-weight: 700; font-size: 0.95rem; color: var(--primary-dark); background: var(--primary-bg); }
     .discount { color: var(--success) !important; }
 
     /* Verification */
     .verify-status {
-      margin: 0 20px 16px;
-      border-radius: 10px;
-      padding: 14px 18px;
-      display: flex; align-items: center; gap: 12px;
-      font-weight: 600; font-size: 0.95rem;
+      margin: 0 16px 14px;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 0.9rem;
     }
     .verify-status.ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
     .verify-status.warn { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
     .verify-status.fail { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-    .verify-icon { font-size: 1.4rem; }
+    .verify-icon { font-size: 1.3rem; }
 
-    .check-list { padding: 0 20px 16px; display: flex; flex-direction: column; gap: 8px; }
+    .check-list { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 6px; }
     .check-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; border-radius: 8px; font-size: 0.875rem;
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 6px; font-size: 0.82rem;
       border: 1px solid var(--border);
     }
     .check-item.pass { background: #f0fdf4; border-color: #bbf7d0; }
     .check-item.fail { background: #fff1f2; border-color: #fecdd3; }
-    .check-item .ci { font-size: 1rem; width: 20px; }
+    .check-item .ci { font-size: 0.95rem; width: 18px; }
     .check-label { flex: 1; font-weight: 500; }
-    .check-detail { font-size: 0.8rem; color: var(--muted); }
+    .check-detail { font-size: 0.75rem; color: var(--muted); }
 
     /* Upload Another */
     .btn-upload-other {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       background: white; border: 2px solid var(--primary);
-      color: var(--primary); border-radius: 10px;
-      padding: 12px 24px; font-size: 0.9rem; font-weight: 600;
+      color: var(--primary); border-radius: var(--radius);
+      padding: 12px 24px; font-size: 0.88rem; font-weight: 700;
       cursor: pointer; width: 100%;
       transition: all 0.2s ease;
     }
@@ -161,55 +163,55 @@
     .result-section { display: none; }
     .file-badge {
       display: inline-flex; align-items: center; gap: 6px;
-      background: #e0e7ff; color: var(--primary-dark);
+      background: var(--primary-bg); color: var(--primary-dark);
       border-radius: 20px; padding: 4px 12px;
-      font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+      font-size: 0.78rem; font-weight: 700; margin-bottom: 16px;
     }
 
-    /* NEW COMPONENT: Total Pesanan & Total Pembayaran (persis seperti screenshot pertama) */
+    /* Total Pesanan & Total Pembayaran */
     .screenshot-component {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      margin-bottom: 20px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
       overflow: hidden;
     }
     .screenshot-total-pesanan {
-      padding: 16px 20px;
-      background: #f1f5f9;
+      padding: 14px 16px;
+      background: var(--primary-bg);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid var(--border);
     }
     .screenshot-total-pembayaran {
-      padding: 16px 20px;
-      background: #f1f5f9;
+      padding: 14px 16px;
+      background: var(--primary-bg);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .screenshot-badge {
-      background: #10b981;
+      background: var(--primary);
       color: white;
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 12px;
       border-radius: 9999px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
     .screenshot-calc {
-      padding: 16px 20px;
-      font-family: monospace;
-      font-size: 1rem;
+      padding: 14px 16px;
+      font-family: 'SF Mono', 'Cascadia Code', monospace;
+      font-size: 0.92rem;
       background: white;
-      border-bottom: 1px dashed #e2e8f0;
-      color: #1e293b;
+      border-bottom: 1px dashed var(--border);
+      color: var(--text);
     }
     .screenshot-status {
-      padding: 20px;
+      padding: 16px;
       text-align: center;
     }
     .screenshot-status-title {
@@ -219,94 +221,113 @@
       justify-content: center;
       color: #f59e0b;
       font-weight: 700;
-      margin-bottom: 12px;
-      font-size: 0.95rem;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
     }
     .screenshot-status-box {
       background: #d1fae5;
       border: 1px solid #6ee7b7;
       color: #065f46;
-      padding: 14px 20px;
-      border-radius: 10px;
-      font-weight: 600;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      font-size: 1rem;
+      gap: 8px;
+      font-size: 0.95rem;
     }
 
-    /* NEW COMPONENT: Rincian Item (persis seperti screenshot terbaru) */
+    /* Rincian Item */
     .item-breakdown-component {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      margin-bottom: 20px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
       overflow: hidden;
     }
     .item-header {
-      padding: 14px 20px;
-      background: #f1f5f9;
-      font-weight: 600;
-      font-size: 1.05rem;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 16px;
+      background: var(--primary-bg);
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary-dark);
     }
     .item-list {
-      padding: 12px 20px;
+      padding: 10px 16px;
       background: white;
     }
     .item-row {
-      margin-bottom: 16px;
-      font-size: 0.95rem;
+      margin-bottom: 14px;
+      font-size: 0.88rem;
     }
     .item-row:last-child { margin-bottom: 0; }
     .item-name {
       font-weight: 600;
-      color: #1e293b;
+      color: var(--text);
     }
     .item-calc {
-      color: #64748b;
+      color: var(--muted);
       margin-top: 2px;
     }
     .total-semua {
-      padding: 16px 20px;
-      background: #f1f5f9;
-      border-top: 1px solid #e2e8f0;
+      padding: 14px 16px;
+      background: var(--primary-bg);
+      border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .subtotal-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 12px 20px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin: 0 20px 20px;
+      margin: 0 16px 16px;
     }
     .subtotal-label {
       font-weight: 500;
-      color: #1e293b;
+      color: var(--text);
     }
     .subtotal-badge {
-      background: #10b981;
+      background: var(--primary);
       color: white;
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 12px;
       border-radius: 9999px;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
-    @media (max-width: 600px) {
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 16px 12px; }
       .info-grid { grid-template-columns: 1fr; }
       .info-item:nth-child(odd) { border-right: none; }
-      header { padding: 14px 16px; }
-      header h1 { font-size: 1.1rem; }
+      .card-header { font-size: 0.85rem; padding: 10px 14px; }
+      th, td { padding: 8px 10px; font-size: 0.78rem; }
+      .summary-table tr td { padding: 7px 14px; font-size: 0.78rem; }
+      .screenshot-total-pesanan,
+      .screenshot-total-pembayaran,
+      .screenshot-calc { padding: 12px 14px; }
+      .screenshot-calc { font-size: 0.82rem; }
+    }
+    @media (max-width: 480px) {
+      header { padding: 12px 14px; }
+      header h1 { font-size: 1rem; }
+      .upload-area { padding: 32px 16px; }
+      .upload-icon { font-size: 2.2rem; }
+      .upload-area h2 { font-size: 0.95rem; }
+      .btn-upload-other { padding: 10px 16px; font-size: 0.82rem; }
+      .verify-status { margin: 0 12px 12px; padding: 10px 12px; font-size: 0.82rem; }
+      .check-list { padding: 0 12px 12px; }
+      .check-item { padding: 7px 10px; font-size: 0.78rem; }
     }
   </style>
 </head>
@@ -387,7 +408,7 @@
       </div>
     </div>
 
-    <!-- KOMPONEN BARU: Total Pesanan & Total Pembayaran (persis seperti screenshot pertama) -->
+    <!-- KOMPONEN BARU: Total Pesanan & Total Pembayaran -->
     <div class="screenshot-component" id="screenshotComponent">
       <!-- Total Pesanan -->
       <div class="screenshot-total-pesanan">
@@ -575,11 +596,18 @@
     data.ongkir = pick(text, [/Total Ongkos Kirim\s*Rp\s*([\d.,]+)/i, /Ongkos Kirim\s*Rp\s*([\d.,]+)/i]) || '0';
     data.ongkir = parseRp('Rp' + data.ongkir);
 
-    data.diskonOngkir = pick(text, [/-Rp\s*([\d.,]+)/i, /Diskon.*?Rp\s*([\d.,]+)/i, /Kupon.*?-Rp\s*([\d.,]+)/i]) || '0';
+    data.diskonOngkir = pick(text, [/Kupon\s*Diskon\s*Ongkos\s*Kirim\s*dari\s*Platform\s*-?\s*Rp\s*([\d.,]+)/i, /Diskon\s*Ongkos\s*Kirim\s*-?\s*Rp\s*([\d.,]+)/i, /Diskon\s*Ongkir\s*-?\s*Rp\s*([\d.,]+)/i]) || '0';
     data.diskonOngkir = parseRp('Rp' + data.diskonOngkir);
 
     data.asuransi = pick(text, [/Biaya Asuransi.*?Rp\s*([\d.,]+)/i, /Asuransi.*?Rp\s*([\d.,]+)/i]) || '0';
     data.asuransi = parseRp('Rp' + data.asuransi);
+
+    // ─── Kupon Diskon Barang dari Platform (BARU) ───
+    data.kuponDiskonPlatform = pick(text, [
+      /Kupon\s*Diskon\s*Barang\s*dari\s*Platform\s*-?\s*Rp\s*([\d.,]+)/i,
+      /Kupon\s*Diskon\s*Barang\s*dari\s*Platform[\s\S]*?-?\s*Rp\s*([\d.,]+)/i
+    ]) || '0';
+    data.kuponDiskonPlatform = parseRp('Rp' + data.kuponDiskonPlatform);
 
     data.totalBelanja = pick(text, [/TOTAL BELANJA\s*Rp\s*([\d.,]+)/i, /Total Belanja\s*Rp\s*([\d.,]+)/i]) || '0';
     data.totalBelanja = parseRp('Rp' + data.totalBelanja);
@@ -620,11 +648,12 @@
         .join('')
       : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Tidak ada produk ditemukan</td></tr>`;
 
-    // Summary table (tetap sama)
+    // Summary table (dengan Kupon Diskon Barang dari Platform)
     const summaryRows = [
       ['Total Harga Barang', fmt(data.totalHarga), false],
       ['Total Ongkos Kirim', fmt(data.ongkir), false],
       ['Diskon Ongkos Kirim', '−' + fmt(data.diskonOngkir), true],
+      ['Kupon Diskon Barang dari Platform', '−' + fmt(data.kuponDiskonPlatform), true],
       ['Biaya Asuransi Pengiriman', fmt(data.asuransi), false],
       ['TOTAL BELANJA', fmt(data.totalBelanja), false, true],
       ['TOTAL TAGIHAN', fmt(data.totalTagihan), false, true],
@@ -636,7 +665,7 @@
       </tr>`
     ).join('');
 
-    // ─── RINCIAN ITEM COMPONENT (baru, ditempatkan tepat di bawah TOTAL TAGIHAN) ───
+    // ─── RINCIAN ITEM COMPONENT ───
     const itemListHTML = data.produk.map((p, i) => `
       <div class="item-row">
         <div><strong>Item ${i+1}:</strong> <span class="item-name">${p.nama}</span></div>
@@ -649,14 +678,13 @@
     const totalItemValue = data.produk.reduce((sum, p) => sum + p.total, 0);
     document.getElementById('totalItemText').innerHTML = `Jumlah ${totalItemCount} item = ${fmt(totalItemValue)}`;
 
-    // Subtotal badge selalu "Sesuai" sesuai screenshot
     document.getElementById('subtotalBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
 
     // ─── NEW COMPONENT RENDERING (Total Pesanan & Total Pembayaran) ───
     document.getElementById('subtotalText').innerHTML = `Subtotal = ${fmt(data.totalHarga)}`;
-    const calcStr = `${fmt(data.totalHarga)} + ${fmt(data.ongkir)} + ${fmt(data.asuransi)} - ${fmt(data.diskonOngkir)} = ${fmt(data.totalBelanja)}`;
+    const calcStr = `${fmt(data.totalHarga)} + ${fmt(data.ongkir)} + ${fmt(data.asuransi)} - ${fmt(data.diskonOngkir)} - ${fmt(data.kuponDiskonPlatform)} = ${fmt(data.totalBelanja)}`;
     document.getElementById('pembayaranCalc').textContent = calcStr;
-    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir + data.asuransi;
+    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir - data.kuponDiskonPlatform + data.asuransi;
     const belanjaOk = Math.abs(calcBelanja - data.totalBelanja) < 500;
     const tagihanOk = Math.abs(data.totalTagihan - data.totalBelanja) < 500;
     document.getElementById('pesananBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
@@ -676,14 +704,14 @@
       statusBox.style.color = '#92400e';
     }
 
-    // Verification (tetap sama)
+    // Verification (dengan kuponDiskonPlatform di kalkulasi)
     const checks = [];
     const calcSub = data.produk.reduce((s, p) => s + p.qty * p.harga, 0);
     const subOk = data.totalHarga === 0 || Math.abs(calcSub - data.totalHarga) < 500;
     checks.push({ ok: subOk || data.totalHarga === 0, label: 'Subtotal Produk', detail: `${fmt(calcSub)} vs ${fmt(data.totalHarga)}` });
 
     const belanjaOk2 = data.totalBelanja === 0 || Math.abs(calcBelanja - data.totalBelanja) < 500;
-    checks.push({ ok: belanjaOk2 || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
+    checks.push({ ok: belanjaOk2 || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon - Kupon Platform + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
 
     const tagihanOk2 = data.totalTagihan === 0 || Math.abs(data.totalTagihan - data.totalBelanja) < 500;
     checks.push({ ok: tagihanOk2 || data.totalTagihan === 0, label: 'Total Tagihan = Total Belanja', detail: `${fmt(data.totalTagihan)} vs ${fmt(data.totalBelanja)}` });
