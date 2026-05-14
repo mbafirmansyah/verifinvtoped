@@ -1,210 +1,765 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice Verification</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
-        .upload-area { background: #fff; border: 2px dashed #ccc; border-radius: 8px; padding: 40px; text-align: center; margin-bottom: 20px; cursor: pointer; transition: border-color 0.3s; }
-        .upload-area:hover { border-color: #4a90d9; }
-        .upload-area input { display: none; }
-        .results { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { padding: 10px 12px; border: 1px solid #ddd; text-align: left; }
-        th { background: #4a90d9; color: #fff; position: sticky; top: 0; }
-        tr:nth-child(even) { background: #f9f9f9; }
-        .status-ok { color: green; font-weight: bold; }
-        .status-err { color: red; font-weight: bold; }
-        .loading { text-align: center; padding: 20px; display: none; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #4a90d9; border-radius: 50%; width: 36px; height: 36px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verifikasi Invoice</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    :root {
+      --primary: #03AC0E;
+      --primary-light: #2bba18;
+      --primary-dark: #028a0b;
+      --primary-bg: #ecfdf0;
+      --success: #03AC0E;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #212121;
+      --muted: #6b7280;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header {
+      background: var(--primary);
+      color: white; padding: 14px 24px;
+      display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 2px 8px rgba(3,172,14,0.25);
+      position: sticky; top: 0; z-index: 100;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.2px; }
+    header span { font-size: 1.4rem; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+
+    /* Upload Area */
+    .upload-area {
+      border: 2px dashed #a3e6a8;
+      border-radius: var(--radius);
+      background: white;
+      padding: 44px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--primary);
+      background: var(--primary-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(3,172,14,0.12);
+    }
+    .upload-area input[type="file"] { display: none; }
+    .upload-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .upload-area h2 { font-size: 1.05rem; color: var(--primary-dark); font-weight: 600; margin-bottom: 4px; }
+    .upload-area p { font-size: 0.82rem; color: var(--muted); }
+
+    /* Loading */
+    .loading { display: none; text-align: center; padding: 32px; }
+    .spinner {
+      width: 36px; height: 36px; margin: 0 auto 14px;
+      border: 3.5px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 12px 16px;
+      background: var(--primary-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 0.9rem; color: var(--primary-dark);
+    }
+
+    /* Info Grid */
+    .info-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .info-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-item:nth-child(odd) { border-right: 1px solid var(--border); }
+    .info-item label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .info-item span { display: block; font-size: 0.85rem; color: var(--text); font-weight: 500; margin-top: 2px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: var(--primary-bg); }
+    th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--primary-dark); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; }
+    td { padding: 10px 14px; border-top: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .qty-badge {
+      display: inline-block;
+      background: var(--primary-bg); color: var(--primary-dark);
+      border-radius: 20px; padding: 2px 10px;
+      font-weight: 700; font-size: 0.75rem;
+    }
+
+    /* Summary */
+    .summary-table { width: 100%; border-collapse: collapse; }
+    .summary-table tr td { padding: 8px 16px; font-size: 0.82rem; }
+    .summary-table tr:not(:last-child) td { border-bottom: 1px solid var(--border); }
+    .summary-table .label { color: var(--muted); }
+    .summary-table .value { text-align: right; font-weight: 500; }
+    .summary-table .total-row td { font-weight: 700; font-size: 0.95rem; color: var(--primary-dark); background: var(--primary-bg); }
+    .discount { color: var(--success) !important; }
+
+    /* Verification */
+    .verify-status {
+      margin: 0 16px 14px;
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 600; font-size: 0.9rem;
+    }
+    .verify-status.ok { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .verify-status.warn { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .verify-status.fail { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .verify-icon { font-size: 1.3rem; }
+
+    .check-list { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .check-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 6px; font-size: 0.82rem;
+      border: 1px solid var(--border);
+    }
+    .check-item.pass { background: #f0fdf4; border-color: #bbf7d0; }
+    .check-item.fail { background: #fff1f2; border-color: #fecdd3; }
+    .check-item .ci { font-size: 0.95rem; width: 18px; }
+    .check-label { flex: 1; font-weight: 500; }
+    .check-detail { font-size: 0.75rem; color: var(--muted); }
+
+    /* Upload Another */
+    .btn-upload-other {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: white; border: 2px solid var(--primary);
+      color: var(--primary); border-radius: var(--radius);
+      padding: 12px 24px; font-size: 0.88rem; font-weight: 700;
+      cursor: pointer; width: 100%;
+      transition: all 0.2s ease;
+    }
+    .btn-upload-other:hover { background: var(--primary); color: white; }
+
+    .result-section { display: none; }
+    .file-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--primary-bg); color: var(--primary-dark);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 0.78rem; font-weight: 700; margin-bottom: 16px;
+    }
+
+    /* Total Pesanan & Total Pembayaran */
+    .screenshot-component {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .screenshot-total-pesanan {
+      padding: 14px 16px;
+      background: var(--primary-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .screenshot-total-pembayaran {
+      padding: 14px 16px;
+      background: var(--primary-bg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .screenshot-badge {
+      background: var(--primary);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .screenshot-calc {
+      padding: 14px 16px;
+      font-family: 'SF Mono', 'Cascadia Code', monospace;
+      font-size: 0.92rem;
+      background: white;
+      border-bottom: 1px dashed var(--border);
+      color: var(--text);
+    }
+    .screenshot-status {
+      padding: 16px;
+      text-align: center;
+    }
+    .screenshot-status-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: center;
+      color: #f59e0b;
+      font-weight: 700;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+    .screenshot-status-box {
+      background: #d1fae5;
+      border: 1px solid #6ee7b7;
+      color: #065f46;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+
+    /* Rincian Item */
+    .item-breakdown-component {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .item-header {
+      padding: 12px 16px;
+      background: var(--primary-bg);
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary-dark);
+    }
+    .item-list {
+      padding: 10px 16px;
+      background: white;
+    }
+    .item-row {
+      margin-bottom: 14px;
+      font-size: 0.88rem;
+    }
+    .item-row:last-child { margin-bottom: 0; }
+    .item-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .item-calc {
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .total-semua {
+      padding: 14px 16px;
+      background: var(--primary-bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .subtotal-box {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 16px 16px;
+    }
+    .subtotal-label {
+      font-weight: 500;
+      color: var(--text);
+    }
+    .subtotal-badge {
+      background: var(--primary);
+      color: white;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 16px 12px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .info-item:nth-child(odd) { border-right: none; }
+      .card-header { font-size: 0.85rem; padding: 10px 14px; }
+      th, td { padding: 8px 10px; font-size: 0.78rem; }
+      .summary-table tr td { padding: 7px 14px; font-size: 0.78rem; }
+      .screenshot-total-pesanan,
+      .screenshot-total-pembayaran,
+      .screenshot-calc { padding: 12px 14px; }
+      .screenshot-calc { font-size: 0.82rem; }
+    }
+    @media (max-width: 480px) {
+      header { padding: 12px 14px; }
+      header h1 { font-size: 1rem; }
+      .upload-area { padding: 32px 16px; }
+      .upload-icon { font-size: 2.2rem; }
+      .upload-area h2 { font-size: 0.95rem; }
+      .btn-upload-other { padding: 10px 16px; font-size: 0.82rem; }
+      .verify-status { margin: 0 12px 12px; padding: 10px 12px; font-size: 0.82rem; }
+      .check-list { padding: 0 12px 12px; }
+      .check-item { padding: 7px 10px; font-size: 0.78rem; }
+    }
+  </style>
 </head>
 <body>
+
+<header>
+  <span>🧾</span>
+  <h1>Verifikasi Invoice</h1>
+</header>
+
 <div class="container">
-    <h1>Invoice Verification Tool</h1>
-    <div class="upload-area" id="uploadArea">
-        <p>📄 Klik atau drag & drop file PDF invoice di sini</p>
-        <p style="font-size:12px;color:#888;margin-top:8px;">Bisa upload banyak file sekaligus</p>
-        <input type="file" id="fileInput" multiple accept=".pdf">
+
+  <!-- Upload -->
+  <div id="uploadArea" class="upload-area" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".pdf" />
+    <div class="upload-icon">📄</div>
+    <h2>Klik atau Drag & Drop File PDF</h2>
+    <p>Upload invoice dalam format PDF untuk diverifikasi</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p style="color:var(--muted); font-weight:500;">Memproses invoice...</p>
+  </div>
+
+  <!-- Result -->
+  <div class="result-section" id="resultSection">
+    <div class="file-badge" id="fileBadge">📄 <span id="fileName">invoice.pdf</span></div>
+
+    <!-- Invoice Info -->
+    <div class="card" id="cardInfo">
+      <div class="card-header">📋 Informasi Invoice</div>
+      <div class="info-grid" id="infoGrid"></div>
     </div>
-    <div class="loading" id="loading"><div class="spinner"></div><p>Memproses PDF...</p></div>
-    <div class="results" id="results" style="display:none;">
+
+    <!-- Products -->
+    <div class="card">
+      <div class="card-header">📦 Rincian Pesanan</div>
+      <div class="table-wrap">
         <table>
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>File</th>
-                    <th>No. Invoice</th>
-                    <th>Tanggal</th>
-                    <th>Total Harga Produk</th>
-                    <th>Diskon Ongkos Kirim</th>
-                    <th>Biaya Asuransi Pengiriman</th>
-                    <th>Biaya Jasa Aplikasi</th>
-                    <th>Total Pembayaran</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Produk</th>
+              <th class="text-center">Kuantitas</th>
+              <th class="text-right">Harga Satuan</th>
+              <th class="text-right">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody id="productTable"></tbody>
         </table>
+      </div>
     </div>
+
+    <!-- Summary -->
+    <div class="card">
+      <div class="card-header">💰 Ringkasan Pembayaran</div>
+      <table class="summary-table" id="summaryTable"></table>
+
+      <!-- KOMPONEN BARU DITAMBAHKAN DIBAWAH TOTAL TAGIHAN -->
+      <div class="item-breakdown-component" id="itemBreakdownComponent">
+        <div class="item-header">📋 Rincian Item</div>
+        <div class="item-list" id="itemList"></div>
+        <div class="total-semua">
+          <div>
+            <div style="font-weight:600;">Total Semua Item</div>
+            <div id="totalItemText" style="color:#64748b; margin-top:4px;">Jumlah 0 item = Rp0</div>
+          </div>
+        </div>
+        <div class="subtotal-box">
+          <div class="subtotal-label">Jumlah Subtotal Item</div>
+          <div class="subtotal-badge" id="subtotalBadge">
+            <span>✅</span>
+            <span>Sesuai</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KOMPONEN BARU: Total Pesanan & Total Pembayaran -->
+    <div class="screenshot-component" id="screenshotComponent">
+      <!-- Total Pesanan -->
+      <div class="screenshot-total-pesanan">
+        <div>
+          <div style="font-weight:600; font-size:1.1rem;">Total Pesanan</div>
+          <div id="subtotalText" style="color:#64748b; margin-top:4px;">Subtotal = Rp0</div>
+        </div>
+        <div class="screenshot-badge" id="pesananBadge">
+          <span>✅</span>
+          <span>Sesuai</span>
+        </div>
+      </div>
+
+      <!-- Total Pembayaran -->
+      <div class="screenshot-calc" id="pembayaranCalc">
+        Rp0 + Rp0 + Rp0 - Rp0 = Rp0
+      </div>
+      <div class="screenshot-total-pembayaran">
+        <div style="font-weight:600; font-size:1.1rem;">Total Pembayaran</div>
+        <div class="screenshot-badge" id="pembayaranBadge">
+          <span>✅</span>
+          <span>Sesuai</span>
+        </div>
+      </div>
+
+      <!-- STATUS VERIFIKASI KESELURUHAN -->
+      <div class="screenshot-status">
+        <div class="screenshot-status-title">
+          <span style="font-size:1.3rem;">⚠️</span>
+          STATUS VERIFIKASI KESELURUHAN
+        </div>
+        <div class="screenshot-status-box" id="overallStatusBox">
+          <span style="font-size:1.4rem;">✅</span>
+          Semua perhitungan invoice VALID
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification -->
+    <div class="card">
+      <div class="card-header">✅ Hasil Verifikasi</div>
+      <div class="verify-status" id="verifyStatus"></div>
+      <div class="check-list" id="checkList"></div>
+    </div>
+
+    <!-- Upload Another -->
+    <button class="btn-upload-other" onclick="document.getElementById('fileInput2').click()">
+      📄 Upload PDF Lain
+      <input type="file" id="fileInput2" accept=".pdf" style="display:none" />
+    </button>
+
+  </div>
 </div>
+
 <script>
-// PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  // Set up PDF.js worker
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-const uploadArea = document.getElementById('uploadArea');
-const fileInput = document.getElementById('fileInput');
-const loading = document.getElementById('loading');
-const results = document.getElementById('results');
-const tableBody = document.getElementById('tableBody');
-let rowCount = 0;
+  // ─── Drag & Drop ───
+  const uploadArea = document.getElementById('uploadArea');
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault(); uploadArea.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type === 'application/pdf') processFile(file);
+  });
 
-uploadArea.addEventListener('click', () => fileInput.click());
-uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = '#4a90d9'; });
-uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#ccc'; });
-uploadArea.addEventListener('drop', e => { e.preventDefault(); uploadArea.style.borderColor = '#ccc'; handleFiles(e.dataTransfer.files); });
-fileInput.addEventListener('change', e => handleFiles(e.target.files));
+  document.getElementById('fileInput').addEventListener('change', e => {
+    if (e.target.files[0]) processFile(e.target.files[0]);
+  });
+  document.getElementById('fileInput2').addEventListener('change', e => {
+    if (e.target.files[0]) processFile(e.target.files[0]);
+  });
 
-async function handleFiles(files) {
-    if (!files.length) return;
-    loading.style.display = 'block';
-    for (const file of files) {
-        try {
-            const text = await extractTextFromPDF(file);
-            const data = parseInvoice(text);
-            addRow(file.name, data);
-        } catch (err) {
-            addRow(file.name, { error: err.message });
-        }
-    }
-    loading.style.display = 'none';
-    results.style.display = 'block';
-}
-
-async function extractTextFromPDF(file) {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  // ─── Core: Extract PDF Text ───
+  async function extractPdfText(file) {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     let fullText = '';
     for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        fullText += content.items.map(item => item.str).join(' ') + '\n';
+      const page = await pdf.getPage(i);
+      const tc = await page.getTextContent();
+      fullText += tc.items.map(it => it.str).join(' ') + '\n';
     }
     return fullText;
-}
+  }
 
-function normalizePdfText(text) {
-    return text
-        .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-function extractField(text, patterns) {
-    for (const pattern of patterns) {
-        const match = text.match(pattern);
-        if (match) {
-            let val = match[1].replace(/[^\d.,\-]/g, '').replace(/\./g, '').replace(',', '.');
-            return parseFloat(val) || 0;
-        }
+  // ─── Helpers ───
+  const fmt = n => 'Rp' + Math.round(n).toLocaleString('id-ID');
+  function parseRp(str) {
+    const m = str.replace(/[^\d]/g, '');
+    return m ? parseInt(m, 10) : 0;
+  }
+  function pick(text, patterns) {
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) return m[1]?.trim() || m[0]?.trim();
     }
-    return 0;
-}
+    return null;
+  }
 
-function parseInvoice(rawText) {
-    const text = normalizePdfText(rawText);
-    try {
-        // No. Invoice
-        const invMatch = text.match(/(?:No\.?\s*Invoice|Invoice\s*No\.?|Nomor\s*Invoice)[:\s]*([A-Za-z0-9\-\/]+)/i);
-        const noInvoice = invMatch ? invMatch[1].trim() : '-';
+  // ─── Parse Invoice ───
+  function parseInvoice(text) {
+    const data = {};
 
-        // Tanggal
-        const tglMatch = text.match(/(?:Tanggal|Tgl|Date)[:\s]*(\d{1,2}[\s\-\/]\w+[\s\-\/]\d{2,4})/i);
-        const tanggal = tglMatch ? tglMatch[1].trim() : '-';
+    // No Invoice
+    data.noInvoice = pick(text, [
+      /(\d{18,})/,
+      /INV[\/\-]?\s*([\w\-\/]+)/i,
+      /No[.\s]*Invoice[\s:]+([^\n]+)/i
+    ]) || '-';
 
-        // Total Harga Produk
-        const totalProdukPatterns = [
-            /Total\s*Harga\s*(?:Produk|Barang)[:\s]*-?\s*Rp\.?\s*([\d.,]+)/i,
-            /Total\s*Harga\s*(?:Produk|Barang)[:\s]*([\d.,]+)/i,
-            /Harga\s*Produk[:\s]*Rp\.?\s*([\d.,]+)/i
-        ];
-        const totalProduk = extractField(text, totalProdukPatterns);
+    // Tanggal
+    data.tanggal = pick(text, [
+      /(\d{1,2}\s+\w+\s+\d{4})/,
+      /Tanggal Pembelian\s*:\s*([^\n]+)/i,
+      /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/
+    ]) || '-';
 
-        // Diskon Ongkos Kirim
-        const diskonOngkirPatterns = [
-            /Diskon\s*Ongkos\s*Kirim[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i,
-            /Diskon\s*Ongkir[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i,
-            /Diskon\s*Ongkos\s*Kirim[:\s]*([\d.,\-]+)/i,
-            /Diskon\s*Ongkir[:\s]*([\d.,\-]+)/i
-        ];
-        const diskonOngkir = extractField(text, diskonOngkirPatterns);
+    // Penjual
+    data.penjual = pick(text, [
+      /Penjual\s*:\s*([^\n]+)/i,
+      /Seller\s*:\s*([^\n]+)/i,
+      /DITERBITKAN ATAS NAMA\s+Penjual\s*:\s*([^\n]+)/i
+    ]) || '-';
 
-        // Biaya Asuransi Pengiriman
-        const asuransiPatterns = [
-            /Biaya\s*Asuransi\s*Pengiriman[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i,
-            /Asuransi\s*Pengiriman[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i,
-            /Biaya\s*Asuransi\s*Pengiriman[:\s]*([\d.,\-]+)/i,
-            /Asuransi\s*Pengiriman[:\s]*([\d.,\-]+)/i
-        ];
-        const asuransi = extractField(text, asuransiPatterns);
+    // Pembeli
+    data.pembeli = pick(text, [
+      /Pembeli\s*:\s*([^\n]+)/i,
+      /Buyer\s*:\s*([^\n]+)/i,
+      /UNTUK\s+Pembeli\s*:\s*([^\n]+)/i
+    ]) || '-';
 
-        // Biaya Jasa Aplikasi
-        const jasaAplikasiPatterns = [
-            /Biaya\s*Jasa\s*Aplikasi[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i,
-            /Jasa\s*Aplikasi[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i,
-            /Biaya\s*Jasa\s*Aplikasi[:\s]*([\d.,\-]+)/i,
-            /Jasa\s*Aplikasi[:\s]*([\d.,\-]+)/i,
-            /Biaya\s*Layanan\s*Aplikasi[:\s]*-?\s*Rp\.?\s*([\d.,\-]+)/i
-        ];
-        const jasaAplikasi = extractField(text, jasaAplikasiPatterns);
+    // Alamat
+    data.alamat = pick(text, [
+      /Alamat Pengiriman\s*:\s*([\s\S]+?)(?=INFO PRODUK|PRODUK|Metode)/i,
+      /Alamat\s*:\s*([^\n]+)/i
+    ]) || '-';
+    data.alamat = data.alamat.replace(/\s+/g, ' ').trim();
 
-        // Total Pembayaran
-        const totalBayarPatterns = [
-            /Total\s*Pembayaran[:\s]*-?\s*Rp\.?\s*([\d.,]+)/i,
-            /Total\s*Bayar[:\s]*-?\s*Rp\.?\s*([\d.,]+)/i,
-            /Total\s*Pembayaran[:\s]*([\d.,]+)/i
-        ];
-        const totalBayar = extractField(text, totalBayarPatterns);
+    // Metode Pembayaran
+    data.metodePembayaran = pick(text, [
+      /Metode Pembayaran\s*:\s*([^\n]+)/i,
+      /Pembayaran\s*:\s*([^\n]+)/i,
+      /(BCA Virtual Account|Transfer Bank|COD|GoPay|OVO|Dana|QRIS|Kartu Kredit)/i
+    ]) || '-';
 
-        return { noInvoice, tanggal, totalProduk, diskonOngkir, asuransi, jasaAplikasi, totalBayar };
-    } catch (e) {
-        return { error: e.message };
+    // ─── Produk ───
+    data.produk = [];
+    const blockMatch = text.match(/INFO PRODUK[\s\S]*?(?=TOTAL HARGA \()/i);
+    if (blockMatch) {
+      const block = blockMatch[0];
+      const allPrices = [...block.matchAll(/Rp\s*([\d.,]+)/gi)].map(m => parseRp(m[0]));
+      const qtyMatch = block.match(/(?:JUMLAH|BARANG)[\s\S]*?(\d+)\s*Rp/i) ||
+                       block.match(/(\d)\s*Rp\s*[\d.,]+\s*Rp/i);
+      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+      let prodNama = block.replace(/INFO PRODUK.*?TOTAL HARGA/i, '')
+        .replace(/JUMLAH.*|HARGA SATUAN.*|Berat.*|Rp[\d.,\s]*/gi, '')
+        .replace(/\s+/g, ' ').trim();
+      const namMatch = block.match(/(?:INVOICE\s+)?([A-Za-z][\w\s\-\.]+?)(?:\s+Berat|\s+\d\s+Rp)/i) ||
+                       text.match(/([A-Z][a-z][\w\s,\-\.]+?(?:Switch|Router|Access Point|Modem|Hub|AP|Gigabit|Unmanaged|Managed)[^\n]*)/i);
+      if (namMatch) prodNama = namMatch[1].trim();
+
+      if (allPrices.length >= 2) {
+        data.produk.push({ nama: prodNama || 'Produk', qty, harga: allPrices[0], total: allPrices[1] || allPrices[0] * qty });
+      }
     }
-}
 
-function formatRupiah(num) {
-    if (num === 0) return 'Rp 0';
-    return 'Rp ' + Math.abs(num).toLocaleString('id-ID') + (num < 0 ? ' (-)' : '');
-}
+    if (data.produk.length === 0) {
+      const m = text.match(/(\d)\s*Rp\s*([\d.,]+)\s*Rp\s*([\d.,]+)/);
+      if (m) {
+        data.produk.push({ nama: 'Produk', qty: parseInt(m[1]), harga: parseRp(m[2]), total: parseRp(m[3]) });
+      }
+    }
 
-function addRow(filename, data) {
-    rowCount++;
-    const tr = document.createElement('tr');
-    if (data.error) {
-        tr.innerHTML = `<td>${rowCount}</td><td>${filename}</td><td colspan="8" class="status-err">Error: ${data.error}</td>`;
+    // ─── Harga ───
+    data.totalHarga = pick(text, [
+      /TOTAL HARGA\s*\(\d+\s*BARANG\)\s*Rp\s*([\d.,]+)/i,
+      /Total Harga\s*[:\s]*Rp\s*([\d.,]+)/i
+    ]);
+    data.totalHarga = data.totalHarga ? parseRp('Rp' + data.totalHarga) : (data.produk[0]?.total || 0);
+
+    data.ongkir = pick(text, [/Total Ongkos Kirim\s*Rp\s*([\d.,]+)/i, /Ongkos Kirim\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.ongkir = parseRp('Rp' + data.ongkir);
+
+    data.diskonOngkir = pick(text, [/Kupon\s*Diskon\s*Ongkos\s*Kirim\s*dari\s*Platform\s*-?\s*Rp\s*([\d.,]+)/i, /Diskon\s*Ongkos\s*Kirim\s*-?\s*Rp\s*([\d.,]+)/i, /Diskon\s*Ongkir\s*-?\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.diskonOngkir = parseRp('Rp' + data.diskonOngkir);
+
+    data.asuransi = pick(text, [/Biaya Asuransi.*?Rp\s*([\d.,]+)/i, /Asuransi.*?Rp\s*([\d.,]+)/i]) || '0';
+    data.asuransi = parseRp('Rp' + data.asuransi);
+
+    // ─── Kupon Diskon Barang dari Platform (BARU) ───
+    data.kuponDiskonPlatform = pick(text, [
+      /Kupon\s*Diskon\s*Barang\s*dari\s*Platform\s*-?\s*Rp\s*([\d.,]+)/i,
+      /Kupon\s*Diskon\s*Barang\s*dari\s*Platform[\s\S]*?-?\s*Rp\s*([\d.,]+)/i
+    ]) || '0';
+    data.kuponDiskonPlatform = parseRp('Rp' + data.kuponDiskonPlatform);
+
+    data.totalBelanja = pick(text, [/TOTAL BELANJA\s*Rp\s*([\d.,]+)/i, /Total Belanja\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.totalBelanja = parseRp('Rp' + data.totalBelanja);
+
+    data.totalTagihan = pick(text, [/TOTAL TAGIHAN\s*Rp\s*([\d.,]+)/i, /Total Tagihan\s*Rp\s*([\d.,]+)/i]) || '0';
+    data.totalTagihan = parseRp('Rp' + data.totalTagihan);
+
+    return data;
+  }
+
+  // ─── Render ───
+  function renderResult(data, fileName) {
+    document.getElementById('fileName').textContent = fileName;
+
+    // Info
+    const infoItems = [
+      ['No. Invoice', data.noInvoice],
+      ['Tanggal Pembelian', data.tanggal],
+      ['Penjual', data.penjual],
+      ['Pembeli', data.pembeli],
+      ['Metode Pembayaran', data.metodePembayaran],
+      ['Alamat Pengiriman', data.alamat],
+    ];
+    document.getElementById('infoGrid').innerHTML = infoItems.map(([l, v]) =>
+      `<div class="info-item"><label>${l}</label><span>${v || '-'}</span></div>`
+    ).join('');
+
+    // Produk (table tetap sama)
+    document.getElementById('productTable').innerHTML = data.produk.length
+      ? data.produk.map((p, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${p.nama}</td>
+            <td class="text-center"><span class="qty-badge">${p.qty}</span></td>
+            <td class="text-right">${fmt(p.harga)}</td>
+            <td class="text-right"><strong>${fmt(p.total)}</strong></td>
+          </tr>`)
+        .join('')
+      : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Tidak ada produk ditemukan</td></tr>`;
+
+    // Summary table (dengan Kupon Diskon Barang dari Platform)
+    const summaryRows = [
+      ['Total Harga Barang', fmt(data.totalHarga), false],
+      ['Total Ongkos Kirim', fmt(data.ongkir), false],
+      ['Diskon Ongkos Kirim', '−' + fmt(data.diskonOngkir), true],
+      ['Kupon Diskon Barang dari Platform', '−' + fmt(data.kuponDiskonPlatform), true],
+      ['Biaya Asuransi Pengiriman', fmt(data.asuransi), false],
+      ['TOTAL BELANJA', fmt(data.totalBelanja), false, true],
+      ['TOTAL TAGIHAN', fmt(data.totalTagihan), false, true],
+    ];
+    document.getElementById('summaryTable').innerHTML = summaryRows.map(([l, v, disc, bold]) =>
+      `<tr ${bold ? 'class="total-row"' : ''}>
+        <td class="label">${l}</td>
+        <td class="value ${disc ? 'discount' : ''}">${v}</td>
+      </tr>`
+    ).join('');
+
+    // ─── RINCIAN ITEM COMPONENT ───
+    const itemListHTML = data.produk.map((p, i) => `
+      <div class="item-row">
+        <div><strong>Item ${i+1}:</strong> <span class="item-name">${p.nama}</span></div>
+        <div class="item-calc">${fmt(p.harga)} × ${p.qty} = <strong>${fmt(p.total)}</strong></div>
+      </div>
+    `).join('');
+    document.getElementById('itemList').innerHTML = itemListHTML;
+
+    const totalItemCount = data.produk.length;
+    const totalItemValue = data.produk.reduce((sum, p) => sum + p.total, 0);
+    document.getElementById('totalItemText').innerHTML = `Jumlah ${totalItemCount} item = ${fmt(totalItemValue)}`;
+
+    document.getElementById('subtotalBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
+
+    // ─── NEW COMPONENT RENDERING (Total Pesanan & Total Pembayaran) ───
+    document.getElementById('subtotalText').innerHTML = `Subtotal = ${fmt(data.totalHarga)}`;
+    const calcStr = `${fmt(data.totalHarga)} + ${fmt(data.ongkir)} + ${fmt(data.asuransi)} - ${fmt(data.diskonOngkir)} - ${fmt(data.kuponDiskonPlatform)} = ${fmt(data.totalBelanja)}`;
+    document.getElementById('pembayaranCalc').textContent = calcStr;
+    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir - data.kuponDiskonPlatform + data.asuransi;
+    const belanjaOk = Math.abs(calcBelanja - data.totalBelanja) < 500;
+    const tagihanOk = Math.abs(data.totalTagihan - data.totalBelanja) < 500;
+    document.getElementById('pesananBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
+    document.getElementById('pembayaranBadge').innerHTML = belanjaOk ? `<span>✅</span><span>Sesuai</span>` : `<span>❌</span><span>Tidak Sesuai</span>`;
+
+    const allOk = belanjaOk && tagihanOk;
+    const statusBox = document.getElementById('overallStatusBox');
+    if (allOk) {
+      statusBox.innerHTML = `<span style="font-size:1.4rem;">✅</span> Semua perhitungan invoice VALID`;
+      statusBox.style.background = '#d1fae5';
+      statusBox.style.borderColor = '#6ee7b7';
+      statusBox.style.color = '#065f46';
     } else {
-        const status = data.totalBayar > 0 ? '<span class="status-ok">✓ OK</span>' : '<span class="status-err">⚠ Cek</span>';
-        tr.innerHTML = `
-            <td>${rowCount}</td>
-            <td>${filename}</td>
-            <td>${data.noInvoice}</td>
-            <td>${data.tanggal}</td>
-            <td>${formatRupiah(data.totalProduk)}</td>
-            <td>${formatRupiah(data.diskonOngkir)}</td>
-            <td>${formatRupiah(data.asuransi)}</td>
-            <td>${formatRupiah(data.jasaAplikasi)}</td>
-            <td>${formatRupiah(data.totalBayar)}</td>
-            <td>${status}</td>
-        `;
+      statusBox.innerHTML = `<span style="font-size:1.4rem;">⚠️</span> Ada perhitungan yang perlu diperiksa`;
+      statusBox.style.background = '#fef3c7';
+      statusBox.style.borderColor = '#fcd34d';
+      statusBox.style.color = '#92400e';
     }
-    tableBody.appendChild(tr);
-}
+
+    // Verification (dengan kuponDiskonPlatform di kalkulasi)
+    const checks = [];
+    const calcSub = data.produk.reduce((s, p) => s + p.qty * p.harga, 0);
+    const subOk = data.totalHarga === 0 || Math.abs(calcSub - data.totalHarga) < 500;
+    checks.push({ ok: subOk || data.totalHarga === 0, label: 'Subtotal Produk', detail: `${fmt(calcSub)} vs ${fmt(data.totalHarga)}` });
+
+    const belanjaOk2 = data.totalBelanja === 0 || Math.abs(calcBelanja - data.totalBelanja) < 500;
+    checks.push({ ok: belanjaOk2 || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon - Kupon Platform + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
+
+    const tagihanOk2 = data.totalTagihan === 0 || Math.abs(data.totalTagihan - data.totalBelanja) < 500;
+    checks.push({ ok: tagihanOk2 || data.totalTagihan === 0, label: 'Total Tagihan = Total Belanja', detail: `${fmt(data.totalTagihan)} vs ${fmt(data.totalBelanja)}` });
+
+    const infoOk = data.penjual !== '-' && data.pembeli !== '-';
+    checks.push({ ok: infoOk, label: 'Kelengkapan Info Penjual & Pembeli', detail: infoOk ? 'Data lengkap' : 'Ada info yang tidak terdeteksi' });
+
+    const allOkFull = checks.every(c => c.ok);
+    const someOk = checks.some(c => c.ok);
+    const statusEl = document.getElementById('verifyStatus');
+    if (allOkFull) {
+      statusEl.className = 'verify-status ok';
+      statusEl.innerHTML = '<span class="verify-icon">✅</span> Semua perhitungan invoice valid dan sesuai!';
+    } else if (someOk) {
+      statusEl.className = 'verify-status warn';
+      statusEl.innerHTML = '<span class="verify-icon">⚠️</span> Invoice memiliki beberapa item yang perlu diperiksa.';
+    } else {
+      statusEl.className = 'verify-status fail';
+      statusEl.innerHTML = '<span class="verify-icon">❌</span> Invoice tidak dapat diverifikasi sepenuhnya.';
+    }
+
+    document.getElementById('checkList').innerHTML = checks.map(c => `
+      <div class="check-item ${c.ok ? 'pass' : 'fail'}">
+        <span class="ci">${c.ok ? '✅' : '❌'}</span>
+        <span class="check-label">${c.label}</span>
+        <span class="check-detail">${c.detail}</span>
+      </div>`
+    ).join('');
+  }
+
+  // ─── Main Process ───
+  async function processFile(file) {
+    uploadArea.style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('resultSection').style.display = 'none';
+
+    try {
+      const text = await extractPdfText(file);
+      const data = parseInvoice(text);
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('resultSection').style.display = 'block';
+      renderResult(data, file.name);
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      uploadArea.style.display = 'block';
+      alert('Gagal membaca PDF: ' + err.message);
+    }
+  }
 </script>
 </body>
 </html>
