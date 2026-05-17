@@ -602,6 +602,14 @@
     data.asuransi = pick(text, [/Biaya Asuransi.*?Rp\s*([\d.,]+)/i, /Asuransi.*?Rp\s*([\d.,]+)/i]) || '0';
     data.asuransi = parseRp('Rp' + data.asuransi);
 
+    // ─── Biaya Jasa Aplikasi (BARU) ───
+    data.biayaJasaAplikasi = pick(text, [
+      /Biaya\s*Jasa\s*Aplikasi\s*Rp\s*([\d.,]+)/i,
+      /Biaya\s*Jasa\s*Aplikasi\s*[:\-]?\s*Rp\s*([\d.,]+)/i,
+      /Jasa\s*Aplikasi\s*Rp\s*([\d.,]+)/i
+    ]) || '0';
+    data.biayaJasaAplikasi = parseRp('Rp' + data.biayaJasaAplikasi);
+
     // ─── Kupon Diskon Barang dari Platform (BARU) ───
     data.kuponDiskonPlatform = pick(text, [
       /Kupon\s*Diskon\s*Barang\s*dari\s*Platform\s*-?\s*Rp\s*([\d.,]+)/i,
@@ -648,12 +656,13 @@
         .join('')
       : `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">Tidak ada produk ditemukan</td></tr>`;
 
-    // Summary table (dengan Kupon Diskon Barang dari Platform)
+    // Summary table (dengan Biaya Jasa Aplikasi & Kupon Diskon Barang dari Platform)
     const summaryRows = [
       ['Total Harga Barang', fmt(data.totalHarga), false],
       ['Total Ongkos Kirim', fmt(data.ongkir), false],
       ['Diskon Ongkos Kirim', '−' + fmt(data.diskonOngkir), true],
       ['Kupon Diskon Barang dari Platform', '−' + fmt(data.kuponDiskonPlatform), true],
+      ['Biaya Jasa Aplikasi', fmt(data.biayaJasaAplikasi), false],
       ['Biaya Asuransi Pengiriman', fmt(data.asuransi), false],
       ['TOTAL BELANJA', fmt(data.totalBelanja), false, true],
       ['TOTAL TAGIHAN', fmt(data.totalTagihan), false, true],
@@ -682,9 +691,9 @@
 
     // ─── NEW COMPONENT RENDERING (Total Pesanan & Total Pembayaran) ───
     document.getElementById('subtotalText').innerHTML = `Subtotal = ${fmt(data.totalHarga)}`;
-    const calcStr = `${fmt(data.totalHarga)} + ${fmt(data.ongkir)} + ${fmt(data.asuransi)} - ${fmt(data.diskonOngkir)} - ${fmt(data.kuponDiskonPlatform)} = ${fmt(data.totalBelanja)}`;
+    const calcStr = `${fmt(data.totalHarga)} + ${fmt(data.ongkir)} + ${fmt(data.asuransi)} + ${fmt(data.biayaJasaAplikasi)} - ${fmt(data.diskonOngkir)} - ${fmt(data.kuponDiskonPlatform)} = ${fmt(data.totalBelanja)}`;
     document.getElementById('pembayaranCalc').textContent = calcStr;
-    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir - data.kuponDiskonPlatform + data.asuransi;
+    const calcBelanja = data.totalHarga + data.ongkir - data.diskonOngkir - data.kuponDiskonPlatform + data.asuransi + data.biayaJasaAplikasi;
     const belanjaOk = Math.abs(calcBelanja - data.totalBelanja) < 500;
     const tagihanOk = Math.abs(data.totalTagihan - data.totalBelanja) < 500;
     document.getElementById('pesananBadge').innerHTML = `<span>✅</span><span>Sesuai</span>`;
@@ -704,14 +713,14 @@
       statusBox.style.color = '#92400e';
     }
 
-    // Verification (dengan kuponDiskonPlatform di kalkulasi)
+    // Verification (dengan biayaJasaAplikasi & kuponDiskonPlatform di kalkulasi)
     const checks = [];
     const calcSub = data.produk.reduce((s, p) => s + p.qty * p.harga, 0);
     const subOk = data.totalHarga === 0 || Math.abs(calcSub - data.totalHarga) < 500;
     checks.push({ ok: subOk || data.totalHarga === 0, label: 'Subtotal Produk', detail: `${fmt(calcSub)} vs ${fmt(data.totalHarga)}` });
 
     const belanjaOk2 = data.totalBelanja === 0 || Math.abs(calcBelanja - data.totalBelanja) < 500;
-    checks.push({ ok: belanjaOk2 || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir - Diskon - Kupon Platform + Asuransi', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
+    checks.push({ ok: belanjaOk2 || data.totalBelanja === 0, label: 'Total Belanja = Harga + Ongkir + Asuransi + Jasa Aplikasi - Diskon - Kupon Platform', detail: `${fmt(calcBelanja)} vs ${fmt(data.totalBelanja)}` });
 
     const tagihanOk2 = data.totalTagihan === 0 || Math.abs(data.totalTagihan - data.totalBelanja) < 500;
     checks.push({ ok: tagihanOk2 || data.totalTagihan === 0, label: 'Total Tagihan = Total Belanja', detail: `${fmt(data.totalTagihan)} vs ${fmt(data.totalBelanja)}` });
