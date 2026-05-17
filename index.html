@@ -560,22 +560,32 @@
 
     // ─── Produk ───
     data.produk = [];
-    const blockMatch = text.match(/INFO PRODUK[\s\S]*?(?=TOTAL HARGA \()/i);
-    if (blockMatch) {
-      const block = blockMatch[0];
-      const allPrices = [...block.matchAll(/Rp\s*([\d.,]+)/gi)].map(m => parseRp(m[0]));
-      const qtyMatch = block.match(/(?:JUMLAH|BARANG)[\s\S]*?(\d+)\s*Rp/i) ||
-                       block.match(/(\d)\s*Rp\s*[\d.,]+\s*Rp/i);
-      const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
-      let prodNama = block.replace(/INFO PRODUK.*?TOTAL HARGA/i, '')
-        .replace(/JUMLAH.*|HARGA SATUAN.*|Berat.*|Rp[\d.,\s]*/gi, '')
-        .replace(/\s+/g, ' ').trim();
-      const namMatch = block.match(/(?:INVOICE\s+)?([A-Za-z][\w\s\-\.]+?)(?:\s+Berat|\s+\d\s+Rp)/i) ||
-                       text.match(/([A-Z][a-z][\w\s,\-\.]+?(?:Switch|Router|Access Point|Modem|Hub|AP|Gigabit|Unmanaged|Managed)[^\n]*)/i);
-      if (namMatch) prodNama = namMatch[1].trim();
+    // Strategy: find all product entries by looking for patterns like:
+    // ProductName \n Berat : X kg/gr \n Qty \n RpHarga \n RpTotal
+    // We search the entire text for product blocks
+    const productPattern = /([A-Za-z][A-Za-z\w\s\-\.\,\/\(\)]+?)(?:\s+Berat\s*:\s*([\d.,]+\s*(?:kg|gr|gram|g)))\s+(\d+)\s+Rp\s*([\d.,]+)\s+Rp\s*([\d.,]+)/gi;
+    let prodMatch;
+    while ((prodMatch = productPattern.exec(text)) !== null) {
+      const nama = prodMatch[1].replace(/\s+/g, ' ').trim();
+      const qty = parseInt(prodMatch[3]) || 1;
+      const harga = parseRp('Rp' + prodMatch[4]);
+      const total = parseRp('Rp' + prodMatch[5]);
+      data.produk.push({ nama, qty, harga, total });
+    }
 
-      if (allPrices.length >= 2) {
-        data.produk.push({ nama: prodNama || 'Produk', qty, harga: allPrices[0], total: allPrices[1] || allPrices[0] * qty });
+    // Fallback: try simpler pattern if nothing found
+    if (data.produk.length === 0) {
+      const blockMatch = text.match(/INFO PRODUK[\s\S]*?(?=TOTAL HARGA \()/i);
+      if (blockMatch) {
+        const block = blockMatch[0];
+        const allPrices = [...block.matchAll(/Rp\s*([\d.,]+)/gi)].map(m => parseRp(m[0]));
+        const qtyMatch = block.match(/(\d)\s*Rp\s*[\d.,]+\s*Rp/i);
+        const qty = qtyMatch ? parseInt(qtyMatch[1]) : 1;
+        const namMatch = block.match(/(?:INVOICE\s+)?([A-Za-z][\w\s\-\.]+?)(?:\s+Berat|\s+\d\s+Rp)/i);
+        const prodNama = namMatch ? namMatch[1].trim() : 'Produk';
+        if (allPrices.length >= 2) {
+          data.produk.push({ nama: prodNama, qty, harga: allPrices[0], total: allPrices[1] || allPrices[0] * qty });
+        }
       }
     }
 
